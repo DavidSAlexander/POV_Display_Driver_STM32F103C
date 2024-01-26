@@ -9,9 +9,16 @@
 #ifndef INC_POV_DISPLAYCFG_H_
 #define INC_POV_DISPLAYCFG_H_
 
+
 /*******************************************************************************
  *                             Macro Declarations                              *
  *******************************************************************************/
+
+/* Timer used for Input Capture (Period Measuring) */
+#define ICUTIM            htim2
+
+/* Timer used for Intervals display */
+#define DISPTIM           htim3
 
 #define PIXELS            (8U)
 #define RESOLUTION        (240U)
