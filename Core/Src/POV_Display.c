@@ -11,7 +11,7 @@
 
 volatile uint32_t TimeDifference;
 volatile uint16_t Capture;
-volatile uint16_t ICU_TIM2_OVC   = 0;
+volatile uint16_t ICU_TIM_OVC    = 0;
 volatile uint8_t  POV_Digits     = 0;
 volatile uint8_t  PixelsCounter  = 0;
 volatile uint8_t  PovDisplayData[RESOLUTION];
@@ -43,23 +43,23 @@ static void POV_IntervalsDisplay(uint8_t valueToPresent)
 }
 
 /**
-  * @brief Sets the interrupt period for TIM3.
+  * @brief Sets the interrupt period for ICUTIM.
   *
-  * This function calculates the auto-reload value for TIM3 based on the desired interrupt period in microseconds
+  * This function calculates the auto-reload value for ICUTIM based on the desired interrupt period in microseconds
   * and sets it accordingly. It also resets the TIM3 counter to zero.
   *
-  * @param desiredPeriodMicroseconds: The desired interrupt period for TIM3 in microseconds.
+  * @param desiredPeriodMicroseconds: The desired interrupt period for ICUTIM in microseconds.
   */
-static void setTIM3InterruptPeriod(uint16_t desiredPeriodMicroseconds)
+static void setDISPTIMInterruptPeriod(uint16_t desiredPeriodMicroseconds)
 {
     /* Calculate auto-reload value based on desired interrupt period and system clock frequency */
     uint16_t autoReloadValue = (desiredPeriodMicroseconds * (uint16_t)sysClockFreq) - 1;
 
-    /* Reset TIM3 counter to zero */
-    __HAL_TIM_SET_COUNTER(&htim3, 0);
+    /* Reset DISPTIM counter to zero */
+    __HAL_TIM_SET_COUNTER(&DISPTIM, 0);
 
-    /* Set the auto-reload value for TIM3 */
-    __HAL_TIM_SET_AUTORELOAD(&htim3, autoReloadValue);
+    /* Set the auto-reload value for DISPTIM */
+    __HAL_TIM_SET_AUTORELOAD(&DISPTIM, autoReloadValue);
 }
 
 /**
@@ -73,20 +73,20 @@ static void setTIM3InterruptPeriod(uint16_t desiredPeriodMicroseconds)
   */
 void POV_Init(void)
 {
-    /* Start TIM2 base and enable interrupt */
-    HAL_TIM_Base_Start_IT(&htim2);
+    /* Start DISPTIM base and enable interrupt */
+    HAL_TIM_Base_Start_IT(&ICUTIM);
 
-    /* Start TIM2 input capture for Channel 1 and enable interrupt */
-    HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
+    /* Start DISPTIM input capture for Channel 1 and enable interrupt */
+    HAL_TIM_IC_Start_IT(&ICUTIM, TIM_CHANNEL_1);
 
-    /* Start TIM3 base */
-    HAL_TIM_Base_Start_IT(&htim3);
+    /* Start ICUTIM base */
+    HAL_TIM_Base_Start_IT(&DISPTIM);
 
     /* Calculate system clock frequency in MHz */
     sysClockFreq = (uint8_t)(HAL_RCC_GetSysClockFreq() / 1000000);
 
-    /* Set the prescaler for TIM2 */
-    __HAL_TIM_SET_PRESCALER(&htim2, (sysClockFreq - 1));
+    /* Set the prescaler for DISPTIM */
+    __HAL_TIM_SET_PRESCALER(&ICUTIM, (sysClockFreq - 1));
 
     /* Initialize POV Display variables */
     CursPos = 0;
@@ -569,8 +569,8 @@ void POV_WriteIntegerInPos(int32_t Num, uint8_t Pos)
   */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-    /* Check if the interrupt is triggered by TIM3 */
-    if (htim->Instance == TIM3)
+    /* Check if the interrupt is triggered by DISPTIM */
+    if (htim->Instance == DISPTIM)
     {
         /* Increment the counter tracking the displayed pixels */
         PixelsCounter++;
@@ -589,28 +589,28 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             /* Nothing to do */
         }
     }
-    /* Check if the interrupt is triggered by TIM2 */
-    else if (htim->Instance == TIM2)
+    /* Check if the interrupt is triggered by ICUTIM */
+    else if (htim->Instance == ICUTIM)
     {
-        /* Increment the overflow counter for TIM2 */
-        ICU_TIM2_OVC++;
+        /* Increment the overflow counter for ICUTIM */
+        ICU_TIM_OVC++;
     }
 }
 
 
 /**
-  * @brief Callback function for TIM2 input capture interrupt.
+  * @brief Callback function for ICUTIM input capture interrupt.
   *
-  * This function is called when an input capture event occurs on TIM2.
-  * It calculates the time difference between consecutive capture events, sets the period for TIM3 interrupts,
+  * This function is called when an input capture event occurs on ICUTIM.
+  * It calculates the time difference between consecutive capture events, sets the period for DISPTIM interrupts,
   * and resets relevant counters and registers for further measurements.
   *
-  * @param htim: Pointer to the TIM_HandleTypeDef structure that contains the configuration information for TIM2.
+  * @param htim: Pointer to the TIM_HandleTypeDef structure that contains the configuration information for ICUTIM.
   */
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
-	/* Check if the interrupt is triggered by TIM2 */
-    if (htim->Instance == TIM2)
+    /* Check if the interrupt is triggered by ICUTIM */
+    if (htim->Instance == ICUTIM)
     {
     	/* Reset the pixel counter */
         PixelsCounter = 0;
@@ -619,17 +619,17 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
         POV_IntervalsDisplay(PovDisplayData[PixelsCounter]);
 
         /* Read the captured value and calculate the time difference */
-        Capture = HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1);
-        TimeDifference = ((uint32_t)Capture + ((uint32_t)ICU_TIM2_OVC * 65536));
+        Capture = HAL_TIM_ReadCapturedValue(&ICUTIM, TIM_CHANNEL_1);
+        TimeDifference = ((uint32_t)Capture + ((uint32_t)ICU_TIM_OVC * 65536));
 
-        /* Calculate the period for TIM3 interrupts based on the time difference */
+        /* Calculate the period for DISPTIM interrupts based on the time difference */
         uint16_t Period = (uint16_t)(TimeDifference / RESOLUTION);
         /* Set the new intervals Period */
-        setTIM3InterruptPeriod(Period);
+        setDISPTIMInterruptPeriod(Period);
 
-        /* Reset the overflow counter for TIM2 */
-        ICU_TIM2_OVC = 0;
-        /* Reset the counter register for TIM2 */
-        __HAL_TIM_SET_COUNTER(&htim2, 0);
+        /* Reset the overflow counter for ICUTIM */
+        ICU_TIM_OVC = 0;
+        /* Reset the counter register for ICUTIM */
+        __HAL_TIM_SET_COUNTER(&ICUTIM, 0);
     }
 }
