@@ -57,6 +57,8 @@ void POV_DrawFrame(uint8_t Column1, uint8_t Row1, uint8_t Row2, uint8_t Column2)
 void POV_DrawLine(uint8_t Column1, uint8_t Row1, uint8_t Column2, uint8_t Row2);
 void POV_DrawTriangle(uint8_t Column1, uint8_t Row1, uint8_t Column2, uint8_t Row2, uint8_t Column3, uint8_t Row3);
 void POV_WriteColumn(uint8_t Column, uint8_t Value);
+void POV_WriteInteger(int32_t Num);
+void POV_WriteIntegerInPos(int32_t Num, uint8_t Pos);
 
 uint8_t POV_ReadColumn(uint8_t Column);
 uint8_t POV_ReadPixel(uint8_t Row, uint8_t Column);
