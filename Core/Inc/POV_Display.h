@@ -35,8 +35,8 @@ typedef struct
  *******************************************************************************/
 extern const POV_Pins_t   POV_Pins;
 extern const uint8_t      POV_Font[][FONTSIZE];
-extern TIM_HandleTypeDef  htim2;
-extern TIM_HandleTypeDef  htim3;
+extern TIM_HandleTypeDef  ICUTIM;
+extern TIM_HandleTypeDef  DISPTIM;
 extern uint8_t            POVDigits;
 
 /*******************************************************************************
