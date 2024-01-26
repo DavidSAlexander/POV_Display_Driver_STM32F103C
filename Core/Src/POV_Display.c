@@ -483,7 +483,80 @@ uint8_t POV_ReadPixel(uint8_t Row, uint8_t Column)
     return ((PovDisplayData[Column] >> Row) & ON);
 }
 
+/**
+  * @brief  Writes an integer to the POV Display.
+  *
+  * This function converts the given integer (Num) into a string representation
+  * and then displays the string on the POV Display. The conversion handles
+  * both positive and negative integers. The function takes care of reversing
+  * the string to display it correctly on the POV Display.
+  *
+  * @param  Num: The integer to be displayed on the POV Display.
+  * @retval None
+  */
+void POV_WriteInteger(int32_t Num)
+{
+    /* Buffer to hold the string representation  */
+    int8_t str[16];          
+    /* Flag to indicate if the number is negative */
+    uint8_t isNegative = 0x00; 
 
+    /* Check if the number is negative */
+    if (Num < 0)
+    {
+    	/* Make the number positive */
+        Num = -Num;  
+        /* Set the negative flag  */
+        isNegative = 0x01;   
+    }
+
+    uint8_t ArrIndex = 0;
+
+    /* Convert the number to string */
+    do
+    {
+        str[ArrIndex++] = '0' + Num % 10;
+        Num /= 10;
+    } while (Num > 0);
+
+    /* Add a negative sign if the number was originally negative */
+    if (isNegative == 0x01)
+        str[ArrIndex++] = '-';
+
+    /* Null-terminate the string */
+    str[ArrIndex] = '\0'; 
+
+    /* Reverse the string */
+    for (uint8_t NumsCounter = 0; NumsCounter < (ArrIndex / 2); NumsCounter++)
+    {
+        uint8_t temp     = str[NumsCounter];
+        str[NumsCounter] = str[ArrIndex - NumsCounter - 1];
+        str[ArrIndex - NumsCounter - 1] = temp;
+    }
+
+    /* Display the string */
+    POV_WriteString((uint8_t *)str); 
+}
+
+/**
+  * @brief  Writes an integer to a specific position on the POV Display.
+  *
+  * This function sets the cursor position to the specified position (Pos) on
+  * the POV Display and then writes the integer (Num) at that position. The
+  * position is specified as the column index on the display.
+  *
+  * @param  Num: The integer to be displayed on the POV Display.
+  * @param  Pos: The column index where the integer should be displayed.
+  * @retval None
+  */
+void POV_WriteIntegerInPos(int32_t Num, uint8_t Pos)
+{
+    /* Set the cursor position to the specified position */
+    POV_SetCursor(Pos);
+
+    /* Write the integer to the POV Display */
+    POV_WriteInteger(Num);
+}
 
 /**
   * @brief Callback function for TIM3 period elapsed interrupt.
